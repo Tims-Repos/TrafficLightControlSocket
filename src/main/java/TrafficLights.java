@@ -6,7 +6,7 @@ import java.util.ArrayList;
 public class TrafficLights {
     private ArrayList<TrafficLight> trafficlights = new ArrayList<TrafficLight>();
 
-    private String[] trafficIds = {"XOZ", "XOW","XZO", "XZW", "XWO", "XWZ",
+    private final String[] trafficIds = {"XOZ", "XOW","XZO", "XZW", "XWO", "XWZ",
             "YNO", "YNW", "YON", "YOW", "YWN", "YWO",
             "BNO", "BNW", "BZO",
             "FN", "FO", "FZ", "FW",

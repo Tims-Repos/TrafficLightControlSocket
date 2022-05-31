@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.Vector;
 
@@ -8,9 +9,9 @@ import java.util.Vector;
 /**
  * Created by nathan on 26/03/2017.
  */
-public class ServerDispatcher {
+    public class ServerDispatcher {
     private final Vector<ClientInfo> mClients = new Vector<ClientInfo>();
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
 
 
     public synchronized void addClient(ClientInfo aClientInfo) {
@@ -27,12 +28,11 @@ public class ServerDispatcher {
         TrafficLights trafficLights = new TrafficLights();
         trafficLights.initializeTrafficLights();
 
-        /*final GsonBuilder gsonBuilder = new GsonBuilder();
-
+        final GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(TrafficLights.class, new TrafficLightsSerializer());
         gsonBuilder.registerTypeAdapter(TrafficLight.class, new TrafficLightSerializer());
 
-        final Gson gson = gsonBuilder.create();*/
+        final Gson gson = gsonBuilder.create();
 
         for (TriggerPoint triggerPoint : triggerPoints.getTriggerpoints()) {
             if (triggerPoint.getRoadStatus() == 1) {

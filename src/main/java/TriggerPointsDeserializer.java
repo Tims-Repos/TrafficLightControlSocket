@@ -1,6 +1,7 @@
 import com.google.gson.*;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -13,8 +14,8 @@ public class TriggerPointsDeserializer implements JsonDeserializer<TriggerPoints
         throws JsonParseException {
         final JsonObject jsonObject = json.getAsJsonObject();
 
-        final List<TriggerPoint> triggerPointList = context.deserialize(jsonObject.get("triggerpoints"), TriggerPoint[].class);
-
+        final TriggerPoint[] triggerPointArray = context.deserialize(jsonObject.get("triggerpoints"), TriggerPoint[].class);
+        final List<TriggerPoint> triggerPointList = Arrays.asList(triggerPointArray);
         final TriggerPoints triggerPoints = new TriggerPoints();
         triggerPoints.setTriggerpoints(triggerPointList);
         return triggerPoints;
