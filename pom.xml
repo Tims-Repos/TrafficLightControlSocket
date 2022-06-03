@@ -12,7 +12,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <addClassPath>true</addClassPath>
+                            <addClasspath>true</addClasspath>
                             <mainClass>Server</mainClass>
                         </manifest>
                     </archive>
