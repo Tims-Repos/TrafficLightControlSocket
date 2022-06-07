@@ -1,7 +1,6 @@
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
@@ -33,11 +32,6 @@ public class ClientListener extends Thread {
     public void run() {
         message = "";
 
-        /*final GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(TriggerPoints.class, new TriggerPointsDeserializer());
-        gsonBuilder.registerTypeAdapter(TriggerPoint.class, new TriggerPointDeserializer());
-
-        final Gson gson = gsonBuilder.create();*/
         while (!isInterrupted()) {
             try {
                 InputStreamReader input = new InputStreamReader(socket.getInputStream());
@@ -57,7 +51,7 @@ public class ClientListener extends Thread {
                     mClientInfo.mClientSender.interrupt();
                     mServerDispatcher.deleteClient(mClientInfo);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

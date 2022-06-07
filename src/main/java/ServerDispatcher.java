@@ -36,11 +36,6 @@ import java.util.Vector;
 
     public synchronized void sendMessageToAllClients(TriggerPoints triggerPoints) {
 
-
-        /*final GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(TrafficLights.class, new TrafficLightsSerializer());
-        gsonBuilder.registerTypeAdapter(TrafficLight.class, new TrafficLightSerializer());
-        */
         for (TriggerPoint triggerPoint : triggerPoints.getTriggerpoints()) {
             if (triggerPoint.getStatus() == 1) {
                 trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(2);
