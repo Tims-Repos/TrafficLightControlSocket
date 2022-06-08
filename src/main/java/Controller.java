@@ -5,12 +5,15 @@ import com.google.gson.JsonParseException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Controller extends Thread {
     private ClientListener clientListener;
     private ClientSender clientSender;
     private ServerSocket serverSocket;
     private TrafficLights trafficLights;
+    private List<TriggerPoint> triggerPointList = new ArrayList<>();
     private Gson gson;
 
     public Controller() {
@@ -81,6 +84,11 @@ public class Controller extends Thread {
 
     private synchronized void setTrafficLightsStatus(TriggerPoint triggerPoint) {
         if (triggerPoint.getStatus() == 1) {
+            TrafficLight trafficLight = trafficLights.searchTrafficLightById(triggerPoint.getId());
+            //get blocking traffic lights
+            //setBlockingListStatus 1 send (wait 3 seconds)
+            //setBlockingListStatus 0
+            //This triggerpoint 2 send (wait 7 seconds)
             trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(2);
         } else {
             trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(0);

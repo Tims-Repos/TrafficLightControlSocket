@@ -24,14 +24,13 @@ class TrafficLight {
         this.id = id;
     }
 
-    public TrafficLight(String id, int colorStatus) {
+    public TrafficLight(String id, int status) {
         this.id = id;
-        this.status = colorStatus;
+        this.status = status;
     }
 
-    public TrafficLight(String id, int colorStatus, List<String> blockList) {
+    public TrafficLight(String id, List<String> blockList) {
         this.id = id;
-        this.status = colorStatus;
         this.blockList = blockList;
     }
 
