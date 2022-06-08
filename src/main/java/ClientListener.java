@@ -1,6 +1,5 @@
-import com.google.gson.Gson;
-
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
@@ -8,20 +7,12 @@ import java.net.Socket;
  * Created by nathan on 26/03/2017.
  */
 public class ClientListener extends Thread {
-    private final ServerDispatcher mServerDispatcher;
-    private final ClientInfo mClientInfo;
+    private final Controller controller;
     private final Socket socket;
-    private BufferedReader mIn;
-    private String message;
-    private final Gson gson = new Gson();
 
-
-    public ClientListener(ClientInfo aClientInfo,
-                          ServerDispatcher aServerDispatcher) {
-        mClientInfo = aClientInfo;
-        mServerDispatcher = aServerDispatcher;
-        socket = aClientInfo.mSocket;
-
+    public ClientListener(Socket socket, Controller controller) {
+        this.controller = controller;
+        this.socket = socket;
     }
 
     /**
@@ -30,34 +21,25 @@ public class ClientListener extends Thread {
      */
     @Override
     public void run() {
-        message = "";
+        String message;
 
         while (!isInterrupted()) {
             try {
                 InputStreamReader input = new InputStreamReader(socket.getInputStream());
-                mIn = new BufferedReader(input);
-                message = mIn.readLine();
-                System.out.println(message);
-                if (message == null)
-                    break;
-                TriggerPoints triggerPoints = gson.fromJson(message, TriggerPoints.class);
-                try {
-                    if (triggerPoints.getTriggerpoints().size() > 0) {
-                        mServerDispatcher.sendMessageToAllClients(triggerPoints);
-                    }
-                    //System.out.println(triggerPoints);
-                } catch (Exception e) {
-                    System.out.println(("This is no Json object >> " + message));
-                    mClientInfo.mClientSender.interrupt();
-                    mServerDispatcher.deleteClient(mClientInfo);
-                }
-            } catch (Exception e) {
+                BufferedReader bufferedReader = new BufferedReader(input);
+                message = bufferedReader.readLine();
+            } catch (IOException e) {
                 e.printStackTrace();
+                throw new RuntimeException(e);
             }
-        }
 
-        // Communication is broken. Interrupt both listener and sender threads
-        mClientInfo.mClientSender.interrupt();
-        mServerDispatcher.deleteClient(mClientInfo);
+            System.out.println(message);
+            if (message == null)
+                break;
+
+            controller.deserializeMessage(message);
+
+        }
+        throw new RuntimeException("From clientListener: ");
     }
 }

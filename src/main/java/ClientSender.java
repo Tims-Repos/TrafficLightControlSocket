@@ -9,19 +9,11 @@ import java.util.ArrayList;
  */
 public class ClientSender extends Thread
 {
-    private final ArrayList<String> mMessageQueue = new ArrayList<String>();
+    private final ArrayList<String> messageQueue = new ArrayList<>();
+    private final PrintWriter printWriter;
 
-    private final ServerDispatcher mServerDispatcher;
-    private final ClientInfo mClientInfo;
-    private final PrintWriter mOut;
-
-    public ClientSender(ClientInfo aClientInfo, ServerDispatcher aServerDispatcher)
-        throws IOException
-    {
-        mClientInfo = aClientInfo;
-        mServerDispatcher = aServerDispatcher;
-        Socket socket = aClientInfo.mSocket;
-        mOut = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+    public ClientSender(Socket socket) throws IOException {
+        printWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
     }
 
     /**
@@ -31,7 +23,7 @@ public class ClientSender extends Thread
      */
     public synchronized void sendMessage(String aMessage)
     {
-        mMessageQueue.add(aMessage);
+        messageQueue.add(aMessage);
         notify();
     }
 
@@ -42,10 +34,10 @@ public class ClientSender extends Thread
      */
     private synchronized String getNextMessageFromQueue() throws InterruptedException
     {
-        if (mMessageQueue.size()==0)
+        while (messageQueue.size()==0)
             wait();
-        String message = mMessageQueue.get(0);
-        mMessageQueue.remove(0);
+        String message = messageQueue.get(0);
+        messageQueue.remove(0);
         return message;
     }
 
@@ -55,8 +47,8 @@ public class ClientSender extends Thread
     public void sendMessageToClient(String aMessage)
     {
         try {
-            mOut.println(aMessage);
-            mOut.flush();
+            printWriter.println(aMessage);
+            printWriter.flush();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -77,11 +69,7 @@ public class ClientSender extends Thread
         } catch (InterruptedException e) {
             // Communication problem
             System.out.println("Interrupted");
+            throw new RuntimeException();
         }
-
-        //Communication is broken. Interrupt both listener and sender threads
-        mClientInfo.mClientListener.interrupt();
-        mServerDispatcher.deleteClient(mClientInfo);
-        System.out.println("Client disconnected");
     }
 }
