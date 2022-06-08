@@ -10,6 +10,7 @@ public class Server {
     public static void main(String[] args)
     {
         Controller controller = new Controller();
+        controller.start();
         controller.initializeSocketConnection(LISTENING_PORT);
         controller.startCommunicationThreads();
     }

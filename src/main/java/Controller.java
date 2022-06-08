@@ -66,7 +66,8 @@ public class Controller extends Thread {
             gson = new Gson();
             TriggerPoints triggerPoints = gson.fromJson(message, TriggerPoints.class);
             if (triggerPoints.getTriggerpoints().size() > 0) {
-                handleTriggers(triggerPoints);
+                addToTriggerPointList(triggerPoints);
+                //handleTriggers(triggerPoints);
             }
         } catch (JsonParseException exception) {
             System.out.println(("This is no Json object >> " + message));
@@ -74,25 +75,32 @@ public class Controller extends Thread {
         }
     }
 
-    private synchronized void handleTriggers(TriggerPoints triggerPoints) {
-        for (TriggerPoint triggerPoint : triggerPoints.getTriggerpoints()) {
-            setTrafficLightsStatus(triggerPoint);
-        }
-        trafficLights.updateTrafficLights();
-        sendMessageToClient(serializeMessage());
-    }
-
     private synchronized void setTrafficLightsStatus(TriggerPoint triggerPoint) {
         if (triggerPoint.getStatus() == 1) {
             TrafficLight trafficLight = trafficLights.searchTrafficLightById(triggerPoint.getId());
-            //get blocking traffic lights
-            //setBlockingListStatus 1 send (wait 3 seconds)
-            //setBlockingListStatus 0
-            //This triggerpoint 2 send (wait 7 seconds)
-            trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(2);
+            if (!trafficLight.isBlocked()){
+                trafficLight.setBlockListBlocked();
+                Thread t =
+                        new Thread(() -> {
+                            trafficLight.setBlockListStatus(1);
+                            trafficLights.updateTrafficLights();
+                            sendMessageToClient(serializeMessage());
+                            delay(3000);
+                            trafficLight.setBlockListStatus(0);
+                            trafficLight.setStatus(2);
+                            trafficLights.updateTrafficLights();
+                            sendMessageToClient(serializeMessage());
+                            delay(7000);
+                            trafficLight.setBlockListUnblocked();
+                            triggerPointList.remove(triggerPoint);
+
+                        });
+                t.start();
+            }
         } else {
             trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(0);
         }
+        trafficLights.updateTrafficLights();
     }
 
     private synchronized String serializeMessage() {
@@ -103,18 +111,43 @@ public class Controller extends Thread {
     public synchronized void sendMessageToClient(String message) {
         System.out.println(message);
         clientSender.sendMessage(message);
-        delay(2000);
     }
 
-    public void delay(int delay){
-        Thread t = new Thread();
-        t.start();
+    private synchronized void addToTriggerPointList(TriggerPoints triggerPoints) {
+        triggerPointList.addAll(triggerPoints.getTriggerpoints());
+        notify();
+    }
+
+    public synchronized void delay(int delay){
         try {
-            Thread.sleep(delay);
+            sleep(delay);
         }
         catch (InterruptedException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private synchronized TriggerPoint getNextTriggerPointFromList() throws InterruptedException
+    {
+        while (triggerPointList.size()==0)
+            wait();
+        TriggerPoint triggerPoint = triggerPointList.get(0);
+        triggerPointList.remove(0);
+        return triggerPoint;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (!isInterrupted()) {
+                TriggerPoint triggerPoint = getNextTriggerPointFromList();
+                setTrafficLightsStatus(triggerPoint);
+            }
+        } catch (InterruptedException e) {
+            // Communication problem
+            System.out.println("Interrupted");
+            throw new RuntimeException();
         }
     }
 }

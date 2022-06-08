@@ -12,9 +12,9 @@ class TrafficLight {
     @Expose
     private int status;
     @Expose(serialize = false)
-    List<String> blockList = new ArrayList<>();
+    List<TrafficLight> blockList = new ArrayList<>();
     @Expose(serialize = false)
-    boolean isBlocked = false;
+    private boolean isBlocked = false;
 
     public TrafficLight() {
 
@@ -27,11 +27,6 @@ class TrafficLight {
     public TrafficLight(String id, int status) {
         this.id = id;
         this.status = status;
-    }
-
-    public TrafficLight(String id, List<String> blockList) {
-        this.id = id;
-        this.blockList = blockList;
     }
 
     public String getId() {
@@ -48,6 +43,32 @@ class TrafficLight {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public synchronized void setBlockListBlocked() {
+        for (TrafficLight trafficLight : blockList) {
+            trafficLight.setBlocked(true);
+        }
+    }
+
+    public synchronized void setBlockListUnblocked() {
+        for (TrafficLight trafficLight : blockList) {
+            trafficLight.setBlocked(false);
+        }
+    }
+
+    public synchronized void setBlockListStatus(int status) {
+        for (TrafficLight trafficLight : blockList) {
+            trafficLight.setStatus(status);
+        }
+    }
+
+    public void setBlockList(List<TrafficLight> blockList) {
+        this.blockList = blockList;
+    }
+
+    public synchronized List<TrafficLight> getBlockList() {
+        return blockList;
     }
 
     public boolean isBlocked() {
