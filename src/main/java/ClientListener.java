@@ -33,7 +33,6 @@ public class ClientListener extends Thread {
                 throw new RuntimeException(e);
             }
 
-            System.out.println(message);
             if (message == null)
                 break;
 

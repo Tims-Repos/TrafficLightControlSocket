@@ -7,13 +7,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Controller extends Thread {
     private ClientListener clientListener;
     private ClientSender clientSender;
     private ServerSocket serverSocket;
-    private TrafficLights trafficLights;
-    private List<TriggerPoint> triggerPointList = new ArrayList<>();
+    private final TrafficLights trafficLights = new TrafficLights();
+    private final List<TriggerPoint> triggerPointList = new ArrayList<>();
     private Gson gson;
 
     public Controller() {
@@ -57,7 +59,6 @@ public class Controller extends Thread {
     }
 
     private void Initialize() {
-        trafficLights = new TrafficLights();
         trafficLights.initializeTrafficLights();
     }
 
@@ -75,32 +76,20 @@ public class Controller extends Thread {
         }
     }
 
-    private synchronized void setTrafficLightsStatus(TriggerPoint triggerPoint) {
+    private Runnable setTrafficLightsStatus(TriggerPoint triggerPoint) {
         if (triggerPoint.getStatus() == 1) {
             TrafficLight trafficLight = trafficLights.searchTrafficLightById(triggerPoint.getId());
             if (!trafficLight.isBlocked()){
                 trafficLight.setBlockListBlocked();
-                Thread t =
-                        new Thread(() -> {
-                            trafficLight.setBlockListStatus(1);
-                            trafficLights.updateTrafficLights();
-                            sendMessageToClient(serializeMessage());
-                            delay(3000);
-                            trafficLight.setBlockListStatus(0);
-                            trafficLight.setStatus(2);
-                            trafficLights.updateTrafficLights();
-                            sendMessageToClient(serializeMessage());
-                            delay(7000);
-                            trafficLight.setBlockListUnblocked();
-                            triggerPointList.remove(triggerPoint);
-
-                        });
-                t.start();
+                return new TrafficLightUpdater(trafficLight, triggerPoint);
+            } else {
+                triggerPointList.add(triggerPoint);
             }
         } else {
             trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(0);
         }
         trafficLights.updateTrafficLights();
+        return null;
     }
 
     private synchronized String serializeMessage() {
@@ -109,7 +98,6 @@ public class Controller extends Thread {
     }
 
     public synchronized void sendMessageToClient(String message) {
-        System.out.println(message);
         clientSender.sendMessage(message);
     }
 
@@ -139,15 +127,52 @@ public class Controller extends Thread {
 
     @Override
     public void run() {
+        ExecutorService threadpool = Executors.newFixedThreadPool(8);
+
         try {
             while (!isInterrupted()) {
                 TriggerPoint triggerPoint = getNextTriggerPointFromList();
-                setTrafficLightsStatus(triggerPoint);
+                Runnable runnable = setTrafficLightsStatus(triggerPoint);
+                if (runnable != null) {
+                    threadpool.execute(runnable);
+                }
             }
         } catch (InterruptedException e) {
             // Communication problem
+            threadpool.shutdown();
+            while(!threadpool.isTerminated()) {}
             System.out.println("Interrupted");
             throw new RuntimeException();
+        }
+    }
+
+    public class TrafficLightUpdater implements Runnable {
+        TrafficLight trafficLight;
+        TriggerPoint triggerPoint;
+
+        TrafficLightUpdater(TrafficLight trafficLight, TriggerPoint triggerPoint) {
+            this.trafficLight = trafficLight;
+            this.triggerPoint = triggerPoint;
+        }
+
+        @Override
+        public void run() {
+            System.out.println("Triggered: " + trafficLight.toString());
+            trafficLight.setBlockListStatus(1);
+            trafficLights.updateTrafficLights();
+            sendMessageToClient(serializeMessage());
+            System.out.println(trafficLight.getId() + ": Orange: " + trafficLight.blockList.toString());
+            System.out.println(trafficLight.getId() + ": Waiting 3 seconds");
+            delay(3000);
+            trafficLight.setBlockListStatus(0);
+            trafficLight.setStatus(2);
+            trafficLights.updateTrafficLights();
+            sendMessageToClient(serializeMessage());
+            System.out.println(trafficLight.getId() + ": Red: " + trafficLight.blockList.toString());
+            System.out.println(trafficLight.getId() + ": Green: " + trafficLight.toString());
+            System.out.printf(trafficLight.getId() + ": Waiting 7 seconds\n\n");
+            delay(7000);
+            trafficLight.setBlockListUnblocked();
         }
     }
 }
