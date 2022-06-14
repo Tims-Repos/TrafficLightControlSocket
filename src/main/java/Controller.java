@@ -157,22 +157,37 @@ public class Controller extends Thread {
 
         @Override
         public void run() {
+            int greenTime = getGreenDelayFromType(triggerPoint);
             System.out.println("Triggered: " + trafficLight.toString());
             trafficLight.setBlockListStatus(1);
             trafficLights.updateTrafficLights();
             sendMessageToClient(serializeMessage());
             System.out.println(trafficLight.getId() + ": Orange: " + trafficLight.blockList.toString());
-            System.out.println(trafficLight.getId() + ": Waiting 3 seconds");
-            delay(3000);
+            System.out.println(trafficLight.getId() + ": Waiting 2 seconds");
+            delay(2000);
             trafficLight.setBlockListStatus(0);
             trafficLight.setStatus(2);
             trafficLights.updateTrafficLights();
             sendMessageToClient(serializeMessage());
             System.out.println(trafficLight.getId() + ": Red: " + trafficLight.blockList.toString());
             System.out.println(trafficLight.getId() + ": Green: " + trafficLight.toString());
-            System.out.printf(trafficLight.getId() + ": Waiting 7 seconds\n\n");
-            delay(7000);
+            System.out.printf(trafficLight.getId() + ": Waiting " + greenTime/1000 + " seconds\n\n");
+            delay(greenTime);
             trafficLight.setBlockListUnblocked();
         }
+    }
+
+    public int getGreenDelayFromType(TriggerPoint triggerPoint) {
+        int greenTime = 7000;
+        switch (triggerPoint.getType()) {
+            case "B":
+                greenTime = 10000;
+                break;
+            case "F":
+            case "V":
+                greenTime = 8000;
+                break;
+        }
+        return greenTime;
     }
 }

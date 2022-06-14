@@ -41,7 +41,7 @@ class TrafficLight {
         this.id = id;
     }
 
-    public void setStatus(int status) {
+    public synchronized void setStatus(int status) {
         this.status = status;
     }
 
@@ -59,7 +59,18 @@ class TrafficLight {
 
     public synchronized void setBlockListStatus(int status) {
         for (TrafficLight trafficLight : blockList) {
-            trafficLight.setStatus(status);
+            switch (status) {
+                case 0:
+                    if (trafficLight.getStatus() != 0) {
+                        trafficLight.setStatus(status);
+                    }
+                    break;
+                case 1:
+                    if (trafficLight.getStatus() == 2) {
+                        trafficLight.setStatus(status);
+                    }
+                    break;
+            }
         }
     }
 
