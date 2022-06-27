@@ -76,8 +76,8 @@ public class Controller extends Thread {
         }
     }
 
-    private Runnable setTrafficLightsStatus(TriggerPoint triggerPoint) {
-        if (triggerPoint.getStatus() == 1) {
+    private synchronized Runnable setTrafficLightsStatus(TriggerPoint triggerPoint) {
+        if (triggerPoint.isTriggered()) {
             TrafficLight trafficLight = trafficLights.searchTrafficLightById(triggerPoint.getId());
             if (!trafficLight.isBlocked()){
                 trafficLight.setBlockListBlocked();
@@ -92,6 +92,10 @@ public class Controller extends Thread {
         return null;
     }
 
+    private synchronized Runnable getRunnable(TriggerPoint triggerPoint, TrafficLight trafficLight) {
+        return new TrafficLightUpdater(trafficLight, triggerPoint);
+    }
+
     private synchronized String serializeMessage() {
         gson =  new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         return gson.toJson(trafficLights);
@@ -103,17 +107,7 @@ public class Controller extends Thread {
 
     private synchronized void addToTriggerPointList(TriggerPoints triggerPoints) {
         triggerPointList.addAll(triggerPoints.getTriggerpoints());
-        notify();
-    }
-
-    public synchronized void delay(int delay){
-        try {
-            sleep(delay);
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
+        notifyAll();
     }
 
     private synchronized TriggerPoint getNextTriggerPointFromList() throws InterruptedException
@@ -132,9 +126,17 @@ public class Controller extends Thread {
         try {
             while (!isInterrupted()) {
                 TriggerPoint triggerPoint = getNextTriggerPointFromList();
-                Runnable runnable = setTrafficLightsStatus(triggerPoint);
-                if (runnable != null) {
-                    threadpool.execute(runnable);
+                TrafficLight trafficLight = trafficLights.searchTrafficLightById(triggerPoint.getId());
+                if (triggerPoint.isTriggered()) {
+                    if (!trafficLight.isBlocked()) {
+                        trafficLight.setBlockListBlocked();
+                        threadpool.execute(getRunnable(triggerPoint, trafficLight));
+                    } else {
+                        triggerPointList.add(triggerPoint);
+                    }
+                } else {
+                    trafficLight.setStatus(0);
+                    trafficLights.updateTrafficLights();
                 }
             }
         } catch (InterruptedException e) {
@@ -157,27 +159,22 @@ public class Controller extends Thread {
 
         @Override
         public void run() {
-            int greenTime = getGreenDelayFromType(triggerPoint);
+            int greenTime = getGreenTimeFromType(triggerPoint);
             System.out.println("Triggered: " + trafficLight.toString());
             trafficLight.setBlockListStatus(1);
             trafficLights.updateTrafficLights();
             sendMessageToClient(serializeMessage());
-            System.out.println(trafficLight.getId() + ": Orange: " + trafficLight.blockList.toString());
-            System.out.println(trafficLight.getId() + ": Waiting 2 seconds");
             delay(2000);
             trafficLight.setBlockListStatus(0);
             trafficLight.setStatus(2);
             trafficLights.updateTrafficLights();
             sendMessageToClient(serializeMessage());
-            System.out.println(trafficLight.getId() + ": Red: " + trafficLight.blockList.toString());
-            System.out.println(trafficLight.getId() + ": Green: " + trafficLight.toString());
-            System.out.printf(trafficLight.getId() + ": Waiting " + greenTime/1000 + " seconds\n\n");
             delay(greenTime);
             trafficLight.setBlockListUnblocked();
         }
     }
 
-    public int getGreenDelayFromType(TriggerPoint triggerPoint) {
+    public synchronized int getGreenTimeFromType(TriggerPoint triggerPoint) {
         int greenTime = 7000;
         switch (triggerPoint.getType()) {
             case "B":
@@ -185,9 +182,19 @@ public class Controller extends Thread {
                 break;
             case "F":
             case "V":
-                greenTime = 8000;
+                greenTime = 12000;
                 break;
         }
         return greenTime;
+    }
+
+    private void delay(int delay){
+        try {
+            sleep(delay);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
     }
 }

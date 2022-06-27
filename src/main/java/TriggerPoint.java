@@ -43,6 +43,10 @@ public class TriggerPoint {
         this.status = status;
     }
 
+    public boolean isTriggered() {
+        return status == 1;
+    }
+
 
 
     @Override
