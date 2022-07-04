@@ -1,3 +1,5 @@
+package server;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,8 +35,9 @@ public class ClientListener extends Thread {
                 throw new RuntimeException(e);
             }
 
-            if (message == null)
+            if (message == null) {
                 break;
+            }
 
             controller.deserializeMessage(message);
 

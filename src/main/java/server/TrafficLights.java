@@ -1,3 +1,5 @@
+package server;
+
 import com.google.gson.annotations.Expose;
 
 import java.util.*;
@@ -7,7 +9,7 @@ import java.util.*;
  */
 public class TrafficLights {
     @Expose
-    private ArrayList<TrafficLight> trafficlights = new ArrayList<>();
+    private List<TrafficLight> trafficlights = new ArrayList<>();
     @Expose(serialize = false)
     private final Map<String, TrafficLight> trafficLightMap = new LinkedHashMap<>();
 
@@ -25,7 +27,7 @@ public class TrafficLights {
         return trafficLightMap.get(id);
     }
 
-    public ArrayList<TrafficLight> getTrafficlights() {
+    public List<TrafficLight> getTrafficlights() {
         trafficlights = new ArrayList<>(trafficLightMap.values());
         return trafficlights;
     }

@@ -1,15 +1,18 @@
+package server;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by nathan on 26/03/2017.
  */
 public class ClientSender extends Thread
 {
-    private final ArrayList<String> messageQueue = new ArrayList<>();
+    private final List<String> messageQueue = new ArrayList<>();
     private final PrintWriter printWriter;
 
     public ClientSender(Socket socket) throws IOException {
@@ -34,8 +37,9 @@ public class ClientSender extends Thread
      */
     private synchronized String getNextMessageFromQueue() throws InterruptedException
     {
-        while (messageQueue.size()==0)
+        while (messageQueue.isEmpty()) {
             wait();
+        }
         String message = messageQueue.get(0);
         messageQueue.remove(0);
         return message;
@@ -69,7 +73,7 @@ public class ClientSender extends Thread
         } catch (InterruptedException e) {
             // Communication problem
             System.out.println("Interrupted");
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 }

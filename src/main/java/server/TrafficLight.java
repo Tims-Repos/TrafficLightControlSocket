@@ -1,3 +1,5 @@
+package server;
+
 import com.google.gson.annotations.Expose;
 
 import java.util.ArrayList;
@@ -7,12 +9,19 @@ import java.util.List;
  * Created by gebruiker on 4-4-2017.
  */
 class TrafficLight {
+    @Expose(serialize = false)
+    private final int RED = 0;
+    @Expose(serialize = false)
+    private final int ORANGE = 1;
+    @Expose(serialize = false)
+    private final int GREEN = 2;
+
     @Expose
     private String id;
     @Expose
     private int status;
     @Expose(serialize = false)
-    List<TrafficLight> blockList = new ArrayList<>();
+    private List<TrafficLight> blockList = new ArrayList<>();
     @Expose(serialize = false)
     private boolean isBlocked = false;
 
@@ -41,37 +50,56 @@ class TrafficLight {
         this.id = id;
     }
 
-    public synchronized void setStatus(int status) {
+    private synchronized void setStatus(int status) {
         this.status = status;
+    }
+
+    public synchronized void setRed() {
+        setStatus(RED);
+    }
+
+    public synchronized void setOrange() {
+        setStatus(ORANGE);
+    }
+    public synchronized void setGreen() {
+        setStatus(GREEN);
     }
 
     public synchronized void setBlockListBlocked() {
         for (TrafficLight trafficLight : blockList) {
-            trafficLight.setBlocked(true);
+            trafficLight.setBlocked();
         }
     }
 
     public synchronized void setBlockListUnblocked() {
         for (TrafficLight trafficLight : blockList) {
-            trafficLight.setBlocked(false);
+            trafficLight.setUnblocked();
         }
     }
 
-    public synchronized void setBlockListStatus(int status) {
+    private synchronized void setBlockListStatus(int status) {
         for (TrafficLight trafficLight : blockList) {
             switch (status) {
-                case 0:
-                    if (trafficLight.getStatus() != 0) {
+                case RED:
+                    if (trafficLight.getStatus() != RED) {
                         trafficLight.setStatus(status);
                     }
                     break;
-                case 1:
-                    if (trafficLight.getStatus() == 2) {
+                case ORANGE:
+                    if (trafficLight.getStatus() == GREEN) {
                         trafficLight.setStatus(status);
                     }
                     break;
             }
         }
+    }
+
+    public synchronized void setBlockListRed() {
+        setBlockListStatus(RED);
+    }
+
+    public synchronized void setBlockListOrange() {
+        setBlockListStatus(ORANGE);
     }
 
     public void setBlockList(List<TrafficLight> blockList) {
@@ -86,8 +114,12 @@ class TrafficLight {
         return isBlocked;
     }
 
-    public void setBlocked(boolean blocked) {
-        isBlocked = blocked;
+    public void setBlocked() {
+        isBlocked = true;
+    }
+
+    public void setUnblocked() {
+        isBlocked = false;
     }
 
 

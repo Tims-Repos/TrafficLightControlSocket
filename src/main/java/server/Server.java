@@ -1,4 +1,4 @@
-
+package server;
 
 /**
  * Created by nathan on 26/03/2017.

@@ -1,3 +1,5 @@
+package server;
+
 /**
  * Created by gebruiker on 4-4-2017.
  */
@@ -53,6 +55,19 @@ public class TriggerPoint {
     public String toString(){
         return String.format("%s %s %d", id, type, status);
 
+    }
+
+    @Override
+    public boolean equals(Object object)
+    {
+        boolean isEqual;
+        if(!(object instanceof TriggerPoint)) {
+            isEqual = false;
+        } else {
+            TriggerPoint triggerPoint = (TriggerPoint)object;
+            isEqual = this.id.equals(triggerPoint.getId());
+        }
+        return isEqual;
     }
 
 

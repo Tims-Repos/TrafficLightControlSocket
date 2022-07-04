@@ -1,3 +1,5 @@
+package server;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -11,6 +13,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Controller extends Thread {
+    private final int CAR_GREEN_TIME = 7000;
+    private final int BUS_GREEN_TIME = 10_000;
+    private final int PEDESTRIAN_GREEN_TIME = 120_000;
+    private final int ORANGE_TIME = 2000;
+    private final int MAX_THREADS = 4;
+
     private ClientListener clientListener;
     private ClientSender clientSender;
     private ServerSocket serverSocket;
@@ -19,7 +27,7 @@ public class Controller extends Thread {
     private Gson gson;
 
     public Controller() {
-        Initialize();
+        initialize();
     }
 
     public void initializeSocketConnection(int portNumber) {
@@ -58,7 +66,7 @@ public class Controller extends Thread {
         }
     }
 
-    private void Initialize() {
+    private void initialize() {
         trafficLights.initializeTrafficLights();
     }
 
@@ -71,25 +79,9 @@ public class Controller extends Thread {
                 //handleTriggers(triggerPoints);
             }
         } catch (JsonParseException exception) {
-            System.out.println(("This is no Json object >> " + message));
-            throw new RuntimeException();
+            System.out.println("This is no Json object >> " + message);
+            throw new RuntimeException(exception);
         }
-    }
-
-    private synchronized Runnable setTrafficLightsStatus(TriggerPoint triggerPoint) {
-        if (triggerPoint.isTriggered()) {
-            TrafficLight trafficLight = trafficLights.searchTrafficLightById(triggerPoint.getId());
-            if (!trafficLight.isBlocked()){
-                trafficLight.setBlockListBlocked();
-                return new TrafficLightUpdater(trafficLight, triggerPoint);
-            } else {
-                triggerPointList.add(triggerPoint);
-            }
-        } else {
-            trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(0);
-        }
-        trafficLights.updateTrafficLights();
-        return null;
     }
 
     private synchronized Runnable getRunnable(TriggerPoint triggerPoint, TrafficLight trafficLight) {
@@ -112,30 +104,57 @@ public class Controller extends Thread {
 
     private synchronized TriggerPoint getNextTriggerPointFromList() throws InterruptedException
     {
-        while (triggerPointList.size()==0)
+        while (triggerPointList.isEmpty() || wholeListIsBlocked()) {
             wait();
+        }
+        System.out.println(triggerPointList.toString());
         TriggerPoint triggerPoint = triggerPointList.get(0);
         triggerPointList.remove(0);
         return triggerPoint;
     }
 
+    public synchronized void addToListIfNotPresent(TriggerPoint triggerPoint) {
+        boolean contained = triggerPointList.contains(triggerPoint);
+        if (contained) {
+            triggerPointList.add(triggerPointList.size(), triggerPoint);
+            System.out.println(triggerPointList.toString());
+        }
+    }
+
+    private synchronized TrafficLight getTrafficLightFromTrigger(TriggerPoint triggerPoint) {
+        return trafficLights.searchTrafficLightById(triggerPoint.getId());
+    }
+
+    private synchronized boolean wholeListIsBlocked() {
+        if (triggerPointList.isEmpty()) {
+            return false;
+        }
+        for (TriggerPoint trigger : triggerPointList) {
+            if (!trafficLights.searchTrafficLightById(trigger.getId()).isBlocked()) {
+                return false;
+            }
+        }
+        notify();
+        return true;
+    }
+
     @Override
     public void run() {
-        ExecutorService threadpool = Executors.newFixedThreadPool(8);
+        ExecutorService threadpool = Executors.newFixedThreadPool(MAX_THREADS);
 
         try {
             while (!isInterrupted()) {
                 TriggerPoint triggerPoint = getNextTriggerPointFromList();
-                TrafficLight trafficLight = trafficLights.searchTrafficLightById(triggerPoint.getId());
+                TrafficLight trafficLight = getTrafficLightFromTrigger(triggerPoint);
                 if (triggerPoint.isTriggered()) {
                     if (!trafficLight.isBlocked()) {
                         trafficLight.setBlockListBlocked();
                         threadpool.execute(getRunnable(triggerPoint, trafficLight));
                     } else {
-                        triggerPointList.add(triggerPoint);
+                        addToListIfNotPresent(triggerPoint);
                     }
                 } else {
-                    trafficLight.setStatus(0);
+                    trafficLight.setRed();
                     trafficLights.updateTrafficLights();
                 }
             }
@@ -144,9 +163,10 @@ public class Controller extends Thread {
             threadpool.shutdown();
             while(!threadpool.isTerminated()) {}
             System.out.println("Interrupted");
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
+
 
     public class TrafficLightUpdater implements Runnable {
         TrafficLight trafficLight;
@@ -161,12 +181,12 @@ public class Controller extends Thread {
         public void run() {
             int greenTime = getGreenTimeFromType(triggerPoint);
             System.out.println("Triggered: " + trafficLight.toString());
-            trafficLight.setBlockListStatus(1);
+            trafficLight.setBlockListOrange();
             trafficLights.updateTrafficLights();
             sendMessageToClient(serializeMessage());
-            delay(2000);
-            trafficLight.setBlockListStatus(0);
-            trafficLight.setStatus(2);
+            delay(ORANGE_TIME);
+            trafficLight.setBlockListRed();
+            trafficLight.setGreen();
             trafficLights.updateTrafficLights();
             sendMessageToClient(serializeMessage());
             delay(greenTime);
@@ -175,14 +195,14 @@ public class Controller extends Thread {
     }
 
     public synchronized int getGreenTimeFromType(TriggerPoint triggerPoint) {
-        int greenTime = 7000;
+        int greenTime = CAR_GREEN_TIME;
         switch (triggerPoint.getType()) {
             case "B":
-                greenTime = 10000;
+                greenTime = BUS_GREEN_TIME;
                 break;
             case "F":
             case "V":
-                greenTime = 12000;
+                greenTime = PEDESTRIAN_GREEN_TIME;
                 break;
         }
         return greenTime;
