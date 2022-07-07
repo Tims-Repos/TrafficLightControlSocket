@@ -22,12 +22,12 @@ public class ClientSender extends Thread
     /**
      * Adds given message to the message queue and notifies this thread
      * (actually getNextMessageFromQueue method) that a message is arrived.
-     * sendMessage is called by other threads (ServerDispatcher).
+     * sendMessage is called by other threads.
      */
     public synchronized void sendMessage(String aMessage)
     {
         messageQueue.add(aMessage);
-        notify();
+        notifyAll();
     }
 
     /**
