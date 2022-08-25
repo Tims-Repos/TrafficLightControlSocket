@@ -5,14 +5,21 @@ import com.google.gson.annotations.Expose;
 import java.util.*;
 
 /**
- * Created by gebruiker on 4-4-2017.
+ * Created by Timothy on 4-4-2017.
  */
 public class TrafficLights {
+    //The list that the server serializes to a JSON string.
     @Expose
     private List<TrafficLight> trafficlights = new ArrayList<>();
+    //A map that contains the id and it's corresponding traffic light, to make
+    //searching easier.
     @Expose(serialize = false)
     private final Map<String, TrafficLight> trafficLightMap = new LinkedHashMap<>();
 
+    /**
+     * Creates the traffic lights, puts them in the map and fill the
+     * trafficlights list.
+     */
     public void initializeTrafficLights() {
         createTrafficLights();
         for (TrafficLight trafficLight : trafficlights) {
@@ -21,21 +28,31 @@ public class TrafficLights {
         trafficlights = new ArrayList<>(trafficLightMap.values());
     }
 
+    /**
+     * Empty traffic lights constructor.
+     */
     public TrafficLights() {}
 
+    /**
+     * Searches the map with an id and returns the corresponding traffic light.
+     * @param id the id to search for.
+     * @return the corresponding traffic light.
+     */
     public TrafficLight searchTrafficLightById(String id) {
         return trafficLightMap.get(id);
     }
 
-    public List<TrafficLight> getTrafficlights() {
-        trafficlights = new ArrayList<>(trafficLightMap.values());
-        return trafficlights;
-    }
-
+    /**
+     * This method is used to update the traffic light list before serialization.
+     */
     public synchronized void updateTrafficLights() {
         trafficlights = new ArrayList<>(trafficLightMap.values());
     }
 
+    /**
+     * This method is used to create all the traffic lights,
+     * gives them their block lists and adds them to the traffic lights list.
+     */
     private void createTrafficLights() {
         final TrafficLight XOZ = new TrafficLight("XOZ");
         final TrafficLight XOW = new TrafficLight("XOW");
@@ -72,11 +89,11 @@ public class TrafficLights {
         XOZ.setBlockList(new ArrayList<>(Arrays.asList(
                 XZW, VZ, VZM, XWO, XWZ)));
         XOW.setBlockList(new ArrayList<>(Arrays.asList(
-                        VW, VWM, FW, XZW)));
+                VW, VWM, FW, XZW)));
         XZO.setBlockList(new ArrayList<>(Arrays.asList(
-                        VZ, VZM, FZ, XWO)));
+                VZ, VZM, FZ, XWO)));
         XZW.setBlockList(new ArrayList<>(Arrays.asList(
-                        VZ, VZM, FZ, FW, VW, VWM, XOZ, XOW, XWO)));
+                VZ, VZM, FZ, FW, VW, VWM, XOZ, XOW, XWO)));
         XWO.setBlockList(new ArrayList<>(Arrays.asList(
                 VW, VWM, FW, XZW, XOZ, XZO, BZO)));
         XWZ.setBlockList(new ArrayList<>(Arrays.asList(
@@ -159,6 +176,9 @@ public class TrafficLights {
 
     }
 
+    /**
+     * @return the string representation of the trafficlights object.
+     */
     @Override
     public String toString(){
         final StringBuilder formatted = new StringBuilder();

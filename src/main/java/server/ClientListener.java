@@ -19,7 +19,7 @@ public class ClientListener extends Thread {
 
     /**
      * Until interrupted, reads messages from the client socket, forwards them
-     * to the server dispatcher and notifies the server dispatcher.
+     * to the controller and notifies the controller.
      */
     @Override
     public void run() {

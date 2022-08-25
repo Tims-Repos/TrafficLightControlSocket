@@ -3,7 +3,7 @@ package server;
 import com.google.gson.annotations.Expose;
 
 /**
- * Created by gebruiker on 4-4-2017.
+ * Created by Timothy on 4-4-2017.
  */
 public class TriggerPoint {
     @Expose(serialize = false)
@@ -12,50 +12,31 @@ public class TriggerPoint {
     private final int BUS_GREEN_TIME = 10_000;
     @Expose(serialize = false)
     private final int PEDESTRIAN_GREEN_TIME = 120_000;
+    /**
+     * The id, type and status are received as a JSON string from the client
+     * and deserialized to these variables.
+     */
     private String id;
     private String type;
     private int status;
 
-    public TriggerPoint() {}
-
-    public TriggerPoint(String id) {
-        this.id = id;
-    }
-
-    public TriggerPoint(String id, String type, int status) {
-        this.id = id;
-        this.type = type;
-        this.status = status;
-    }
-
+    /**
+     * @return the id of the triggerpoint.
+     */
     public String getId() {
         return id;
     }
 
-    public int getStatus(){
-        return status;
-    }
-
-    public void setId(String id){
-        this.id = id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type){
-        this.type = type;
-    }
-
-    public void setStatus(int status){
-        this.status = status;
-    }
-
+    /**
+     * @return if the triggerpoint is triggered or not.
+     */
     public boolean isTriggered() {
         return status == 1;
     }
 
+    /**
+     * @return the green time based on the type of vehicle.
+     */
     public synchronized int getGreenTimeFromType() {
         int greenTime = CAR_GREEN_TIME;
         switch (type) {
@@ -70,12 +51,20 @@ public class TriggerPoint {
         return greenTime;
     }
 
+    /**
+     * @return the string representation of the triggerpoint object.
+     */
     @Override
     public String toString(){
         return String.format("%s %s %d", id, type, status);
 
     }
 
+    /**
+     *
+     * @param object the object to compare with this object.
+     * @return if the passed objects id is equal to this objects id.
+     */
     @Override
     public boolean equals(Object object)
     {
