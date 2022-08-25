@@ -74,9 +74,9 @@ public class ClientSender extends Thread
                 String message = getNextMessageFromQueue();
                 sendMessageToClient(message);
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             // Communication problem
-            e.printStackTrace();
+            System.out.println("Interrupted");
         }
 
         //Communication is broken. Interrupt both listener and sender threads

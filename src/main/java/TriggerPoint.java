@@ -5,7 +5,7 @@ public class TriggerPoint {
 
     private String id;
     private String type;
-    private int roadStatus;
+    private int status;
 
     public TriggerPoint() {}
 
@@ -13,18 +13,18 @@ public class TriggerPoint {
         this.id = id;
     }
 
-    public TriggerPoint(String id, String type, int roadStatus) {
+    public TriggerPoint(String id, String type, int status) {
         this.id = id;
         this.type = type;
-        this.roadStatus = roadStatus;
+        this.status = status;
     }
 
     public String getId() {
         return id;
     }
 
-    public int getRoadStatus(){
-        return roadStatus;
+    public int getStatus(){
+        return status;
     }
 
     public void setId(String id){
@@ -35,15 +35,15 @@ public class TriggerPoint {
         this.type = type;
     }
 
-    public void setRoadStatus(int roadStatus){
-        this.roadStatus = roadStatus;
+    public void setStatus(int status){
+        this.status = status;
     }
 
 
 
     @Override
     public String toString(){
-        return String.format("%s %s %d", id, type, roadStatus);
+        return String.format("%s %s %d", id, type, status);
 
     }
 

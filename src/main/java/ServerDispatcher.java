@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.Vector;
 
@@ -8,10 +9,20 @@ import java.util.Vector;
 /**
  * Created by nathan on 26/03/2017.
  */
-public class ServerDispatcher {
+    public class ServerDispatcher {
     private final Vector<ClientInfo> mClients = new Vector<ClientInfo>();
-    private Gson gson = new Gson();
+    private TrafficLights trafficLights;
+    private Gson gson;
 
+
+    public ServerDispatcher() {
+        Initialize();
+    }
+
+    private void Initialize() {
+        trafficLights = new TrafficLights();
+        trafficLights.initializeTrafficLights();
+    }
 
     public synchronized void addClient(ClientInfo aClientInfo) {
         mClients.add(aClientInfo);
@@ -24,28 +35,21 @@ public class ServerDispatcher {
     }
 
     public synchronized void sendMessageToAllClients(TriggerPoints triggerPoints) {
-        TrafficLights trafficLights = new TrafficLights();
-        trafficLights.initializeTrafficLights();
-
-        /*final GsonBuilder gsonBuilder = new GsonBuilder();
-
-        gsonBuilder.registerTypeAdapter(TrafficLights.class, new TrafficLightsSerializer());
-        gsonBuilder.registerTypeAdapter(TrafficLight.class, new TrafficLightSerializer());
-
-        final Gson gson = gsonBuilder.create();*/
 
         for (TriggerPoint triggerPoint : triggerPoints.getTriggerpoints()) {
-            if (triggerPoint.getRoadStatus() == 1) {
+            if (triggerPoint.getStatus() == 1) {
                 trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(2);
             } else {
                 trafficLights.searchTrafficLightById(triggerPoint.getId()).setStatus(0);
             }
         }
 
+        trafficLights.updateTrafficLights();
+        gson =  new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         final String aMessage = gson.toJson(trafficLights);
         System.out.println(aMessage);
-        for (ClientInfo infy : mClients) {
-            infy.mClientSender.sendMessage(aMessage);
+        for (ClientInfo info : mClients) {
+            info.mClientSender.sendMessage(aMessage);
         }
         delay(2000);
     }

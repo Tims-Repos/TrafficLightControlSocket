@@ -1,9 +1,12 @@
+import com.google.gson.annotations.Expose;
+
 /**
  * Created by gebruiker on 4-4-2017.
  */
 class TrafficLight {
-
+    @Expose
     private String id;
+    @Expose
     private int status;
 
     public TrafficLight() {

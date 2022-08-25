@@ -7,10 +7,6 @@ import java.net.Socket;
  */
 public class Server {
 
-    private static void createAndShowGUI() {
-        //Create and set up the window
-    }
-
     public static final int LISTENING_PORT = 1337;
 
     public static void main(String[] args)
@@ -33,27 +29,27 @@ public class Server {
         // Start ServerDispatcher thread
         ServerDispatcher serverDispatcher = new ServerDispatcher();
 
-        try
-        {
-            Socket socket = serverSocket.accept();
-            System.out.println("Connected to client");
-            ClientInfo clientInfo = new ClientInfo();
-            clientInfo.mSocket = socket;
-            ClientListener clientListener =
-                    new ClientListener(clientInfo, serverDispatcher);
-            ClientSender clientSender =
-                    new ClientSender(clientInfo, serverDispatcher);
-            clientInfo.mClientListener = clientListener;
-            clientInfo.mClientSender = clientSender;
-            clientListener.start();
-            clientSender.start();
-            serverDispatcher.addClient(clientInfo);
-
-
-        }
-        catch (IOException ioe)
-        {
-            ioe.printStackTrace();
+        while (true) {
+            try
+            {
+                Socket socket = serverSocket.accept();
+                System.out.println("Connected to client");
+                ClientInfo clientInfo = new ClientInfo();
+                clientInfo.mSocket = socket;
+                ClientListener clientListener =
+                        new ClientListener(clientInfo, serverDispatcher);
+                ClientSender clientSender =
+                        new ClientSender(clientInfo, serverDispatcher);
+                clientInfo.mClientListener = clientListener;
+                clientInfo.mClientSender = clientSender;
+                clientListener.start();
+                clientSender.start();
+                serverDispatcher.addClient(clientInfo);
+            }
+            catch (IOException ioe)
+            {
+                ioe.printStackTrace();
+            }
         }
     }
 }
