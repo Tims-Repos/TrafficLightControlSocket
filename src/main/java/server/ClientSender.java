@@ -1,38 +1,33 @@
+package server;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by nathan on 26/03/2017.
  */
 public class ClientSender extends Thread
 {
-    private final ArrayList<String> mMessageQueue = new ArrayList<String>();
+    private final List<String> messageQueue = new ArrayList<>();
+    private final PrintWriter printWriter;
 
-    private final ServerDispatcher mServerDispatcher;
-    private final ClientInfo mClientInfo;
-    private final PrintWriter mOut;
-
-    public ClientSender(ClientInfo aClientInfo, ServerDispatcher aServerDispatcher)
-        throws IOException
-    {
-        mClientInfo = aClientInfo;
-        mServerDispatcher = aServerDispatcher;
-        Socket socket = aClientInfo.mSocket;
-        mOut = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+    public ClientSender(Socket socket) throws IOException {
+        printWriter = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
     }
 
     /**
      * Adds given message to the message queue and notifies this thread
      * (actually getNextMessageFromQueue method) that a message is arrived.
-     * sendMessage is called by other threads (ServerDispatcher).
+     * sendMessage is called by other threads.
      */
     public synchronized void sendMessage(String aMessage)
     {
-        mMessageQueue.add(aMessage);
-        notify();
+        messageQueue.add(aMessage);
+        notifyAll();
     }
 
     /**
@@ -42,10 +37,11 @@ public class ClientSender extends Thread
      */
     private synchronized String getNextMessageFromQueue() throws InterruptedException
     {
-        if (mMessageQueue.size()==0)
+        while (messageQueue.isEmpty()) {
             wait();
-        String message = mMessageQueue.get(0);
-        mMessageQueue.remove(0);
+        }
+        String message = messageQueue.get(0);
+        messageQueue.remove(0);
         return message;
     }
 
@@ -55,8 +51,8 @@ public class ClientSender extends Thread
     public void sendMessageToClient(String aMessage)
     {
         try {
-            mOut.println(aMessage);
-            mOut.flush();
+            printWriter.println(aMessage);
+            printWriter.flush();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -77,11 +73,7 @@ public class ClientSender extends Thread
         } catch (InterruptedException e) {
             // Communication problem
             System.out.println("Interrupted");
+            throw new RuntimeException(e);
         }
-
-        //Communication is broken. Interrupt both listener and sender threads
-        mClientInfo.mClientListener.interrupt();
-        mServerDispatcher.deleteClient(mClientInfo);
-        System.out.println("Client disconnected");
     }
 }
